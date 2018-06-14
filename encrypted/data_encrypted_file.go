@@ -3,6 +3,7 @@ package encrypted
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -50,7 +51,12 @@ func dataSourceEncryptedFileRead(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
-	ciphertext, err := ioutil.ReadFile(path)
+	raw, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	ciphertext, err := base64.StdEncoding.DecodeString(string(raw))
 	if err != nil {
 		return err
 	}
