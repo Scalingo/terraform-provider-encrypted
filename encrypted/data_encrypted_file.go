@@ -73,7 +73,7 @@ func dataSourceEncryptedFileRead(d *schema.ResourceData, meta interface{}) error
 
 	d.Set("value", ciphertext)
 	if d.Get("content_type").(string) == "json" {
-		var parsed map[string]string
+		var parsed map[string]interface{}
 		err := json.Unmarshal(ciphertext, &parsed)
 		if err != nil {
 			return err
