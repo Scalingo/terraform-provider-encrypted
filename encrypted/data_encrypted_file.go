@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -78,10 +79,27 @@ func dataSourceEncryptedFileRead(d *schema.ResourceData, meta interface{}) error
 		if err != nil {
 			return err
 		}
+		parsed = flatten(parsed)
 		d.Set("parsed", parsed)
 	}
 
 	d.SetId(path)
 
 	return nil
+}
+
+func flatten(m map[string]interface{}) map[string]interface{} {
+	dest := map[string]interface{}{}
+	flattenToDest(dest, m, "")
+	return dest
+}
+
+func flattenToDest(dest map[string]interface{}, m map[string]interface{}, prefix string) {
+	for key, value := range m {
+		if submap, ok := value.(map[string]interface{}); ok {
+			flattenToDest(dest, submap, prefix+key+"_")
+		} else {
+			dest[prefix+key] = fmt.Sprint(value)
+		}
+	}
 }
