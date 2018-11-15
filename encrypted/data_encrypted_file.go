@@ -21,6 +21,13 @@ func dataSourceEncryptedFile() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"data_path": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 			"content_type": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -78,6 +85,17 @@ func dataSourceEncryptedFileRead(d *schema.ResourceData, meta interface{}) error
 		err := json.Unmarshal(ciphertext, &parsed)
 		if err != nil {
 			return err
+		}
+		dataPath := d.Get("data_path").([]interface{})
+		if dataPath != nil {
+			for _, segment := range dataPath {
+				v, ok := parsed[segment.(string)].(map[string]interface{})
+				if ok {
+					parsed = v
+				} else {
+					return fmt.Errorf("invalid data_path %v", dataPath)
+				}
+			}
 		}
 		parsed = flatten(parsed)
 		d.Set("parsed", parsed)
