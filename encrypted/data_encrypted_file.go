@@ -40,6 +40,13 @@ func dataSourceEncryptedFile() *schema.Resource {
 				Type:     schema.TypeMap,
 				Computed: true,
 			},
+			"array": {
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Computed: true,
+			},
 		},
 		Read: dataSourceEncryptedFileRead,
 	}
@@ -82,23 +89,32 @@ func dataSourceEncryptedFileRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("value", ciphertext)
 	if d.Get("content_type").(string) == "json" {
 		var parsed map[string]interface{}
+		var parsedArray []interface{}
 		err := json.Unmarshal(ciphertext, &parsed)
 		if err != nil {
 			return err
 		}
 		dataPath := d.Get("data_path").([]interface{})
 		if dataPath != nil {
-			for _, segment := range dataPath {
-				v, ok := parsed[segment.(string)].(map[string]interface{})
-				if ok {
-					parsed = v
+			for i, segment := range dataPath {
+				if v, ok := parsed[segment.(string)].([]interface{}); i == len(dataPath)-1 && ok {
+					parsedArray = v
 				} else {
-					return fmt.Errorf("invalid data_path %v", dataPath)
+					v, ok := parsed[segment.(string)].(map[string]interface{})
+					if ok {
+						parsed = v
+					} else {
+						return fmt.Errorf("invalid data_path %v", dataPath)
+					}
 				}
 			}
 		}
-		parsed = flatten(parsed)
-		d.Set("parsed", parsed)
+		if parsedArray != nil {
+			d.Set("array", parsedArray)
+		} else {
+			parsed = flatten(parsed)
+			d.Set("parsed", parsed)
+		}
 	}
 
 	d.SetId(path)
