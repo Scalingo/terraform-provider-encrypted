@@ -56,7 +56,7 @@ And has the following outputs:
 
 * parsed: if the content is a map, the decrypted content will be there
 * array: if the content is an array, the decrypted content will be there
-* value: the decrypted
+* value: the decrypted file content
 
 ### Utility
 
