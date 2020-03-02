@@ -1,10 +1,8 @@
 # Terraform Provider Encrypted
 
-## Encrypt your terraform secrets easily
+## Encrypt Your Terraform Secrets Easily
 
-
-Terraform-provider-encrypted let you manage encrypted files to store your terraform secrets. (A bit like [Chef's databags](https://docs.chef.io/data_bags/#encrypt-a-data-bag-item)).
-
+Terraform-provider-encrypted lets you manage encrypted files to store your Terraform secrets. (A bit like [Chef's databags](https://docs.chef.io/data_bags/#encrypt-a-data-bag-item)).
 
 ## Usage
 
@@ -14,7 +12,7 @@ Terraform-provider-encrypted let you manage encrypted files to store your terraf
 go install github.com/Scalingo/terraform-provider-encrypted
 ```
 
-### Generate an encryption key
+### Generate an Encryption Key
 
 To generate a new encryption key. You can use OpenSSL CLI:
 
@@ -26,7 +24,7 @@ The key must be 16, 24 or 32 bytes stored in hex format.
 
 ### Configuration
 
-To configure the provider you must give him an encryption key.
+To configure the provider you must give it an encryption key.
 
 ```
 provider "encrypted" {
@@ -36,7 +34,7 @@ provider "encrypted" {
 
 ### Datasource
 
-This provider expose a single resource: `encrypted_file`.
+This provider exposes a single resource: `encrypted_file`.
 
 The resource can be used like this:
 
@@ -48,7 +46,7 @@ data "encrypted_file" "my_secret" {
 }
 ```
 
-This resource accept the following params:
+This resource accepts the following parameters:
 
 * path: Path to the encrypted file
 * content_type: Format of the specified file (For now only "`json`" is supported)
@@ -80,7 +78,7 @@ The CLI is configured using environment variables:
 Usage:
 
 ```
-encrypted path/to/my/file.json
+encrypt path/to/my/file.json
 ```
 
 ### Examples

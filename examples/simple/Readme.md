@@ -1,4 +1,4 @@
-## Run this example
+## Run This Example
 
 
 ### Edit the config/example.json
@@ -19,4 +19,3 @@ Outputs:
 
 password = 5up3R53cr3t
 ```
-
