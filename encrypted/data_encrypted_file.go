@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func dataSourceEncryptedFile() *schema.Resource {
