@@ -1,3 +1,7 @@
+# v1.3.1
+
+* Update terrafork SDK 1.7.0 to 1.17.0
+
 # v1.3.0
 
 * Migrate to official terraform SDK
