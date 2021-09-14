@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -66,7 +66,7 @@ func dataSourceEncryptedFileRead(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}

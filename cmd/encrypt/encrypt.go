@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -45,7 +44,7 @@ func main() {
 		iv, content = decryptFile(key, path)
 	}
 
-	tmpfile, err := ioutil.TempFile("", "scrt")
+	tmpfile, err := os.CreateTemp("", "scrt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,7 +72,7 @@ func main() {
 		panic(err)
 	}
 
-	contentB, err := ioutil.ReadFile(tmpfile.Name())
+	contentB, err := os.ReadFile(tmpfile.Name())
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +86,7 @@ func decryptFile(keyS, path string) ([]byte, string) {
 		panic(err)
 	}
 
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
@@ -139,7 +138,7 @@ func encryptFile(keyS, text, path string, iv []byte) {
 
 	b64 := base64.StdEncoding.EncodeToString(ciphertext)
 
-	err = ioutil.WriteFile(path, []byte(b64), 0600)
+	err = os.WriteFile(path, []byte(b64), 0600)
 	if err != nil {
 		panic(err)
 	}
