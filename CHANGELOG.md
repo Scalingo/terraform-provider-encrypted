@@ -1,3 +1,7 @@
+# To be released
+
+* Bump go version to 1.16 and remove deprecated lib `ioutil` [#9](https://github.com/Scalingo/terraform-provider-encrypted/pull/9)
+
 # v1.3.1
 
 * Update terrafork SDK 1.7.0 to 1.17.0
