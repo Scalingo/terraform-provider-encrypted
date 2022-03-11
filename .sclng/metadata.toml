@@ -1,0 +1,8 @@
+dependencies = []
+description = "Terraform Provider allowing to store encrypted data in terraform repository"
+destination_server = []
+flags = ["devops", "sdk", "tools"]
+languages = ["go"]
+owner = "john@scalingo.com"
+team = "SRE"
+version = "0.0.1"
