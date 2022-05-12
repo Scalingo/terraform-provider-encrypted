@@ -1,4 +1,4 @@
-module github.com/Scalingo/terraform-provider-encrypted
+module github.com/benydc/terraform-provider-encrypted
 
 go 1.16
 
