@@ -58,14 +58,16 @@ func main() {
 	if editor == "" {
 		editor = "nvim"
 	}
-	
+
 	editor_arguments := strings.Fields(os.Getenv("EDITOR_ARGUMENTS"))
+	editor_arguments = append(editor_arguments, tmpfile.Name())
 	var cmd *exec.Cmd
 	if strings.Contains(editor, "vi") {
 		cmd = exec.Command(editor, "-c", "set ft=json", tmpfile.Name())
 	} else {
-		cmd = exec.Command(editor, editor_arguments..., tmpfile.Name())
+		cmd = exec.Command(editor, editor_arguments[:]...)
 	}
+
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	err = cmd.Run()
