@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Scalingo/terraform-provider-encrypted/encrypted"
+	"github.com/benydc/terraform-provider-encrypted/encrypted"
 	"github.com/hashicorp/terraform-plugin-sdk/plugin"
 )
 
