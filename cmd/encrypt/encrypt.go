@@ -44,7 +44,8 @@ func main() {
 		iv, content = decryptFile(key, path)
 	}
 
-	tmpfile, err := os.CreateTemp("", "scrt")
+	ext := filepath.Ext(path)
+	tmpfile, err := os.CreateTemp("", fmt.Sprintf("scrt.*%s", ext))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,14 +60,13 @@ func main() {
 		editor = "nvim"
 	}
 
-	editor_arguments := strings.Fields(os.Getenv("EDITOR_ARGUMENTS"))
-	editor_arguments = append(editor_arguments, tmpfile.Name())
-	var cmd *exec.Cmd
+	var editor_arguments = strings.Fields(os.Getenv("EDITOR_ARGUMENTS"))
 	if strings.Contains(editor, "vi") {
-		cmd = exec.Command(editor, "-c", "set ft=json", tmpfile.Name())
-	} else {
-		cmd = exec.Command(editor, editor_arguments[:]...)
+		editor_arguments = []string{"-c", "set ft=json"}
 	}
+
+	editor_arguments = append(editor_arguments, tmpfile.Name())
+	cmd := exec.Command(editor, editor_arguments[:]...)
 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
