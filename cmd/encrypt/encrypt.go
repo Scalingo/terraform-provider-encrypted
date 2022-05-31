@@ -24,6 +24,7 @@ func main() {
 	key := os.Getenv("ENCRYPTION_KEY")
 	if key == "" {
 		fmt.Println("Missing ENCRYPTION_KEY environment variable")
+
 		return
 	}
 
@@ -55,13 +56,9 @@ func main() {
 	tmpfile.WriteString(content)
 	tmpfile.Close()
 
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		editor = "nvim"
-	}
-
-	var editor_arguments = strings.Fields(os.Getenv("EDITOR_ARGUMENTS"))
-	if strings.Contains(editor, "vi") {
+	editor := getEnv("EDITOR", "nvim")
+	editor_arguments := strings.Fields(os.Getenv("EDITOR_ARGUMENTS"))
+	if strings.Contains(editor, "vi") && len(editor_arguments) == 0 {
 		editor_arguments = []string{"-c", "set ft=json"}
 	}
 
@@ -145,4 +142,12 @@ func encryptFile(keyS, text, path string, iv []byte) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+
+	return fallback
 }
