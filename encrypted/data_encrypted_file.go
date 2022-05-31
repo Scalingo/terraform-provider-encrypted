@@ -130,7 +130,9 @@ func dataSourceEncryptedFileRead(d *encryptedFileDataSourceData, keyS string) er
 
 	d.Value = types.String{Value: string(ciphertext)}
 
-	parse(d, ciphertext)
+	if d.ContentType.Value != "" {
+		parse(d, ciphertext)
+	}
 
 	return nil
 }
