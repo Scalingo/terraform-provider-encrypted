@@ -1,11 +1,21 @@
 TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
+HOSTNAME=terraform.local
+NAMESPACE=local
 PKG_NAME=encrypted
+BINARY=terraform-provider-${PKG_NAME}
+VERSION=1.3.1
+OS_ARCH=darwin_amd64
 
-default: build
-
-build: fmtcheck
+default: fmtcheck
 	go install
+
+build:
+	go build -o ${BINARY}
+
+install: build
+	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${PKG_NAME}/${VERSION}/${OS_ARCH}
+	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${PKG_NAME}/${VERSION}/${OS_ARCH}
 
 test: fmtcheck
 	go test -i $(TEST) || exit 1
