@@ -24,7 +24,7 @@ The key must be 16, 24 or 32 bytes stored in hex format.
 
 ### Configuration
 
-To configure the provider you must give it an encryption key.
+To configure the provider you must give it an encryption key or use the ENCRYPTION_KEY environment variable.
 
 ```
 provider "encrypted" {
@@ -49,7 +49,7 @@ data "encrypted_file" "my_secret" {
 This resource accepts the following parameters:
 
 * path: Path to the encrypted file
-* content_type: Format of the specified file (For now only "`json`" is supported)
+* content_type: Format of the specified file (For now only "`json`" and "`yaml`" is supported)
 * data_path: path to the root element
 
 And has the following outputs:
@@ -74,6 +74,7 @@ The CLI is configured using environment variables:
 
 * ENCRYPTION_KEY (required): Value of the encryption key
 * EDITOR (optional, default: 'nvim') program used to edit the encrypted files
+* EDITOR_ARGUMENTS (optional, default: '') program arguments used to edit the encrypted files
 
 Usage:
 
