@@ -5,56 +5,98 @@ import (
 	"crypto/cipher"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	ctyyaml "github.com/zclconf/go-cty-yaml"
+	"github.com/zclconf/go-cty/cty"
+	"github.com/zclconf/go-cty/cty/function"
+	"github.com/zclconf/go-cty/cty/function/stdlib"
 )
 
-func dataSourceEncryptedFile() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
+var _ tfsdk.DataSourceType = encryptedFileDataSourceType{}
+var _ tfsdk.DataSource = encryptedFileDataSource{}
+
+type encryptedFileDataSourceType struct{}
+
+func (t encryptedFileDataSourceType) GetSchema(ctx context.Context) (tfsdk.Schema, diag.Diagnostics) {
+	return tfsdk.Schema{
+		MarkdownDescription: "Encrypted File data source",
+
+		Attributes: map[string]tfsdk.Attribute{
 			"path": {
-				Type:     schema.TypeString,
+				Type:     types.StringType,
 				Required: true,
-				ForceNew: true,
 			},
 			"data_path": {
-				Type:     schema.TypeList,
+				Type:     types.ListType{ElemType: types.StringType},
 				Optional: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
 			},
 			"content_type": {
-				Type:     schema.TypeString,
+				Type:     types.StringType,
 				Optional: true,
 			},
 			"value": {
-				Type:     schema.TypeString,
+				Type:     types.StringType,
 				Computed: true,
 			},
 			"parsed": {
-				Type:     schema.TypeMap,
+				Type:     types.MapType{ElemType: types.StringType},
 				Computed: true,
 			},
 			"array": {
-				Type: schema.TypeList,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
+				Type:     types.ListType{ElemType: types.StringType},
 				Computed: true,
 			},
 		},
-		Read: dataSourceEncryptedFileRead,
-	}
+	}, nil
 }
 
-func dataSourceEncryptedFileRead(d *schema.ResourceData, meta interface{}) error {
-	keyS := meta.(string)
-	path := d.Get("path").(string)
+func (t encryptedFileDataSourceType) NewDataSource(ctx context.Context, in tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+	provider, diags := convertProviderType(in)
+
+	return encryptedFileDataSource{
+		provider: provider,
+	}, diags
+}
+
+type encryptedFileDataSourceData struct {
+	Path        types.String      `tfsdk:"path"`
+	DataPath    []string          `tfsdk:"data_path"`
+	ContentType types.String      `tfsdk:"content_type"`
+	Value       types.String      `tfsdk:"value"`
+	Parsed      map[string]string `tfsdk:"parsed"`
+	Array       []interface{}     `tfsdk:"array"`
+}
+
+type encryptedFileDataSource struct {
+	provider encrypted
+}
+
+func (d encryptedFileDataSource) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+	data := encryptedFileDataSourceData{}
+	config := encryptedData{}
+
+	diags := req.Config.Get(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	key := stringFromConfigOrEnv(config.Key, "ENCRYPTION_KEY", "")
+	dataSourceEncryptedFileRead(&data, key)
+
+	diags = resp.State.Set(ctx, &data)
+	resp.Diagnostics.Append(diags...)
+}
+
+func dataSourceEncryptedFileRead(d *encryptedFileDataSourceData, keyS string) error {
+	path := d.Path.Value
 
 	key, err := hex.DecodeString(keyS)
 	if err != nil {
@@ -86,54 +128,50 @@ func dataSourceEncryptedFileRead(d *schema.ResourceData, meta interface{}) error
 
 	stream.XORKeyStream(ciphertext, ciphertext)
 
-	d.Set("value", ciphertext)
-	if d.Get("content_type").(string) == "json" {
-		var parsed map[string]interface{}
-		var parsedArray []interface{}
-		err := json.Unmarshal(ciphertext, &parsed)
-		if err != nil {
-			return err
-		}
-		dataPath := d.Get("data_path").([]interface{})
-		if dataPath != nil {
-			for i, segment := range dataPath {
-				if v, ok := parsed[segment.(string)].([]interface{}); i == len(dataPath)-1 && ok {
-					parsedArray = v
-				} else {
-					v, ok := parsed[segment.(string)].(map[string]interface{})
-					if ok {
-						parsed = v
-					} else {
-						return fmt.Errorf("invalid data_path %v", dataPath)
-					}
-				}
-			}
-		}
-		if parsedArray != nil {
-			d.Set("array", parsedArray)
-		} else {
-			parsed = flatten(parsed)
-			d.Set("parsed", parsed)
-		}
-	}
+	d.Value = types.String{Value: string(ciphertext)}
 
-	d.SetId(path)
+	parse(d, ciphertext)
 
 	return nil
 }
 
-func flatten(m map[string]interface{}) map[string]interface{} {
-	dest := map[string]interface{}{}
-	flattenToDest(dest, m, "")
-	return dest
+func parse(d *encryptedFileDataSourceData, data []byte) error {
+	funcs := map[string]function.Function{
+		"json": stdlib.JSONDecodeFunc,
+		"yaml": ctyyaml.YAMLDecodeFunc,
+	}
+
+	ctyValues := []cty.Value{
+		cty.StringVal(string(data)),
+	}
+
+	value, err := funcs[d.ContentType.Value].Call(ctyValues)
+	if err != nil {
+		return err
+	}
+
+	valueType := value.Type()
+	if valueType.IsTupleType() || valueType.IsListType() || valueType.IsSetType() {
+		d.Array = ConfigValueFromHCL2(value).([]interface{})
+	} else {
+		d.Parsed = FlatmapValueFromHCL2(value)
+	}
+
+	return nil
 }
 
-func flattenToDest(dest map[string]interface{}, m map[string]interface{}, prefix string) {
-	for key, value := range m {
-		if submap, ok := value.(map[string]interface{}); ok {
-			flattenToDest(dest, submap, prefix+key+"_")
-		} else {
-			dest[prefix+key] = fmt.Sprint(value)
+func stringFromConfigOrEnv(value types.String, env string, def string) string {
+	if value.Unknown || value.Null || value.Value == "" {
+		value := os.Getenv(env)
+
+		if value != "" {
+			return value
 		}
 	}
+
+	if value.Value == "" {
+		return def
+	}
+
+	return value.Value
 }
