@@ -1,5 +1,6 @@
 # To be released
 
+* chore(go): use go 1.17
 * Bump go version to 1.16 and remove deprecated lib `ioutil` [#9](https://github.com/Scalingo/terraform-provider-encrypted/pull/9)
 
 # v1.3.1
