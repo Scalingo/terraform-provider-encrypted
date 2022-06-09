@@ -2,6 +2,8 @@
 
 ## To be released
 
+* chore(github): workflow Go version update from 1.14 to 1.17
+
 ## v1.3.2
 
 * chore(go): use go 1.17
