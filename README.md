@@ -84,3 +84,7 @@ encrypt path/to/my/file.json
 ### Examples
 
 A simple example can be found in the examples/simple directory.
+
+## Release a New Version
+
+Instructions on this [Notion page](https://www.notion.so/scalingooriginal/New-Terraform-Provider-Release-40cd0af66b1f48148fb641ea138a22e5).
