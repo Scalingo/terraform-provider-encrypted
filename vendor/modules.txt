@@ -259,8 +259,8 @@ github.com/mitchellh/mapstructure
 # github.com/mitchellh/reflectwalk v1.0.1
 ## explicit
 github.com/mitchellh/reflectwalk
-# github.com/oklog/run v1.0.0
-## explicit
+# github.com/oklog/run v1.1.0
+## explicit; go 1.13
 github.com/oklog/run
 # github.com/posener/complete v1.2.1
 ## explicit
