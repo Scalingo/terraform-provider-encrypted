@@ -1,7 +1,9 @@
 package encrypted
 
-import "reflect"
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestFlatten(t *testing.T) {
 	cases := []struct {
