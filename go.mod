@@ -1,6 +1,6 @@
 module github.com/Scalingo/terraform-provider-encrypted
 
-go 1.17
+go 1.19
 
 require github.com/hashicorp/terraform-plugin-sdk v1.17.2
 
