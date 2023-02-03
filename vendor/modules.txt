@@ -101,8 +101,8 @@ github.com/bgentry/go-netrc/netrc
 # github.com/bgentry/speakeasy v0.1.0
 ## explicit
 github.com/bgentry/speakeasy
-# github.com/fatih/color v1.7.0
-## explicit
+# github.com/fatih/color v1.14.1
+## explicit; go 1.17
 github.com/fatih/color
 # github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 ## explicit
