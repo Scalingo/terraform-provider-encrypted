@@ -267,12 +267,11 @@ github.com/mitchellh/reflectwalk
 # github.com/oklog/run v1.1.0
 ## explicit; go 1.13
 github.com/oklog/run
-# github.com/posener/complete v1.2.1
-## explicit
+# github.com/posener/complete v1.2.3
+## explicit; go 1.13
 github.com/posener/complete
 github.com/posener/complete/cmd
 github.com/posener/complete/cmd/install
-github.com/posener/complete/match
 # github.com/shopspring/decimal v1.2.0
 ## explicit; go 1.13
 github.com/shopspring/decimal
