@@ -292,7 +292,7 @@ github.com/ulikunitz/xz/lzma
 ## explicit; go 1.11
 github.com/vmihailenco/msgpack/v4
 github.com/vmihailenco/msgpack/v4/codes
-# github.com/vmihailenco/tagparser v0.1.1
+# github.com/vmihailenco/tagparser v0.1.2
 ## explicit; go 1.13
 github.com/vmihailenco/tagparser
 github.com/vmihailenco/tagparser/internal
