@@ -12,6 +12,7 @@ import (
 )
 
 var HasIndexFunc = function.New(&function.Spec{
+	Description: `Returns true if if the given collection can be indexed with the given key without producing an error, or false otherwise.`,
 	Params: []function.Parameter{
 		{
 			Name:             "collection",
@@ -37,6 +38,7 @@ var HasIndexFunc = function.New(&function.Spec{
 })
 
 var IndexFunc = function.New(&function.Spec{
+	Description: `Returns the element with the given key from the given collection, or raises an error if there is no such element.`,
 	Params: []function.Parameter{
 		{
 			Name: "collection",
@@ -106,6 +108,7 @@ var IndexFunc = function.New(&function.Spec{
 })
 
 var LengthFunc = function.New(&function.Spec{
+	Description: `Returns the number of elements in the given collection.`,
 	Params: []function.Parameter{
 		{
 			Name:             "collection",
@@ -127,10 +130,12 @@ var LengthFunc = function.New(&function.Spec{
 })
 
 var ElementFunc = function.New(&function.Spec{
+	Description: `Returns the element with the given index from the given list or tuple, applying the modulo operation to the given index if it's greater than the number of elements.`,
 	Params: []function.Parameter{
 		{
-			Name: "list",
-			Type: cty.DynamicPseudoType,
+			Name:        "list",
+			Type:        cty.DynamicPseudoType,
+			AllowMarked: true,
 		},
 		{
 			Name: "index",
@@ -185,11 +190,12 @@ var ElementFunc = function.New(&function.Spec{
 			return cty.DynamicVal, fmt.Errorf("cannot use element function with a negative index")
 		}
 
-		if !args[0].IsKnown() {
+		input, marks := args[0].Unmark()
+		if !input.IsKnown() {
 			return cty.UnknownVal(retType), nil
 		}
 
-		l := args[0].LengthInt()
+		l := input.LengthInt()
 		if l == 0 {
 			return cty.DynamicVal, errors.New("cannot use element function with an empty list")
 		}
@@ -197,16 +203,18 @@ var ElementFunc = function.New(&function.Spec{
 
 		// We did all the necessary type checks in the type function above,
 		// so this is guaranteed not to fail.
-		return args[0].Index(cty.NumberIntVal(int64(index))), nil
+		return input.Index(cty.NumberIntVal(int64(index))).WithMarks(marks), nil
 	},
 })
 
 // CoalesceListFunc is a function that takes any number of list arguments
 // and returns the first one that isn't empty.
 var CoalesceListFunc = function.New(&function.Spec{
-	Params: []function.Parameter{},
+	Description: `Returns the first of the given sequences that has a length greater than zero.`,
+	Params:      []function.Parameter{},
 	VarParam: &function.Parameter{
 		Name:             "vals",
+		Description:      `List or tuple values to test in the given order.`,
 		Type:             cty.DynamicPseudoType,
 		AllowUnknown:     true,
 		AllowDynamicType: true,
@@ -268,6 +276,7 @@ var CoalesceListFunc = function.New(&function.Spec{
 // CompactFunc is a function that takes a list of strings and returns a new list
 // with any empty string elements removed.
 var CompactFunc = function.New(&function.Spec{
+	Description: `Removes all empty string elements from the given list of strings.`,
 	Params: []function.Parameter{
 		{
 			Name: "list",
@@ -304,6 +313,7 @@ var CompactFunc = function.New(&function.Spec{
 // ContainsFunc is a function that determines whether a given list or
 // set contains a given single value as one of its elements.
 var ContainsFunc = function.New(&function.Spec{
+	Description: `Returns true if the given value is a value in the given list, tuple, or set, or false otherwise.`,
 	Params: []function.Parameter{
 		{
 			Name: "list",
@@ -362,6 +372,7 @@ var ContainsFunc = function.New(&function.Spec{
 // DistinctFunc is a function that takes a list and returns a new list
 // with any duplicate elements removed.
 var DistinctFunc = function.New(&function.Spec{
+	Description: `Removes any duplicate values from the given list, preserving the order of remaining elements.`,
 	Params: []function.Parameter{
 		{
 			Name: "list",
@@ -397,14 +408,17 @@ var DistinctFunc = function.New(&function.Spec{
 // ChunklistFunc is a function that splits a single list into fixed-size chunks,
 // returning a list of lists.
 var ChunklistFunc = function.New(&function.Spec{
+	Description: `Splits a single list into multiple lists where each has at most the given number of elements.`,
 	Params: []function.Parameter{
 		{
 			Name:        "list",
+			Description: `The list to split into chunks.`,
 			Type:        cty.List(cty.DynamicPseudoType),
 			AllowMarked: true,
 		},
 		{
 			Name:        "size",
+			Description: `The maximum length of each chunk. All but the last element of the result is guaranteed to be of exactly this size.`,
 			Type:        cty.Number,
 			AllowMarked: true,
 		},
@@ -469,6 +483,7 @@ var ChunklistFunc = function.New(&function.Spec{
 // FlattenFunc is a function that takes a list and replaces any elements
 // that are lists with a flattened sequence of the list contents.
 var FlattenFunc = function.New(&function.Spec{
+	Description: `Transforms a list, set, or tuple value into a tuple by replacing any given elements that are themselves sequences with a flattened tuple of all of the nested elements concatenated together.`,
 	Params: []function.Parameter{
 		{
 			Name:        "list",
@@ -523,16 +538,25 @@ func flattener(flattenList cty.Value) ([]cty.Value, []cty.ValueMarks, bool) {
 	if len(flattenListMarks) > 0 {
 		markses = append(markses, flattenListMarks)
 	}
+
 	if !flattenList.Length().IsKnown() {
 		// If we don't know the length of what we're flattening then we can't
 		// predict the length of our result yet either.
 		return nil, markses, false
 	}
+
 	out := make([]cty.Value, 0)
 	isKnown := true
 	for it := flattenList.ElementIterator(); it.Next(); {
 		_, val := it.Element()
-		if val.Type().IsListType() || val.Type().IsSetType() || val.Type().IsTupleType() {
+
+		// Any dynamic types could result in more collections that need to be
+		// flattened, so the type cannot be known.
+		if val == cty.DynamicVal {
+			isKnown = false
+		}
+
+		if !val.IsNull() && (val.Type().IsListType() || val.Type().IsSetType() || val.Type().IsTupleType()) {
 			if !val.IsKnown() {
 				isKnown = false
 				_, unknownMarks := val.Unmark()
@@ -556,9 +580,11 @@ func flattener(flattenList cty.Value) ([]cty.Value, []cty.ValueMarks, bool) {
 
 // KeysFunc is a function that takes a map and returns a sorted list of the map keys.
 var KeysFunc = function.New(&function.Spec{
+	Description: `Returns a list of the keys of the given map in lexicographical order.`,
 	Params: []function.Parameter{
 		{
 			Name:         "inputMap",
+			Description:  `The map to extract keys from. May instead be an object-typed value, in which case the result is a tuple of the object attributes.`,
 			Type:         cty.DynamicPseudoType,
 			AllowUnknown: true,
 			AllowMarked:  true,
@@ -631,6 +657,7 @@ var KeysFunc = function.New(&function.Spec{
 
 // LookupFunc is a function that performs dynamic lookups of map types.
 var LookupFunc = function.New(&function.Spec{
+	Description: `Returns the value of the element with the given key from the given map, or returns the default value if there is no such element.`,
 	Params: []function.Parameter{
 		{
 			Name:        "inputMap",
@@ -723,7 +750,8 @@ var LookupFunc = function.New(&function.Spec{
 // If more than one given map or object defines the same key then the one that
 // is later in the argument sequence takes precedence.
 var MergeFunc = function.New(&function.Spec{
-	Params: []function.Parameter{},
+	Description: `Merges all of the elements from the given maps into a single map, or the attributes from given objects into a single object.`,
+	Params:      []function.Parameter{},
 	VarParam: &function.Parameter{
 		Name:             "maps",
 		Type:             cty.DynamicPseudoType,
@@ -839,10 +867,12 @@ var MergeFunc = function.New(&function.Spec{
 // ReverseListFunc takes a sequence and produces a new sequence of the same length
 // with all of the same elements as the given sequence but in reverse order.
 var ReverseListFunc = function.New(&function.Spec{
+	Description: `Returns the given list with its elements in reverse order.`,
 	Params: []function.Parameter{
 		{
-			Name: "list",
-			Type: cty.DynamicPseudoType,
+			Name:        "list",
+			Type:        cty.DynamicPseudoType,
+			AllowMarked: true,
 		},
 	},
 	Type: func(args []cty.Value) (cty.Type, error) {
@@ -862,19 +892,21 @@ var ReverseListFunc = function.New(&function.Spec{
 		}
 	},
 	Impl: func(args []cty.Value, retType cty.Type) (ret cty.Value, err error) {
-		in := args[0].AsValueSlice()
-		outVals := make([]cty.Value, len(in))
-		for i, v := range in {
+		in, marks := args[0].Unmark()
+		inVals := in.AsValueSlice()
+		outVals := make([]cty.Value, len(inVals))
+
+		for i, v := range inVals {
 			outVals[len(outVals)-i-1] = v
 		}
 		switch {
 		case retType.IsTupleType():
-			return cty.TupleVal(outVals), nil
+			return cty.TupleVal(outVals).WithMarks(marks), nil
 		default:
 			if len(outVals) == 0 {
-				return cty.ListValEmpty(retType.ElementType()), nil
+				return cty.ListValEmpty(retType.ElementType()).WithMarks(marks), nil
 			}
-			return cty.ListVal(outVals), nil
+			return cty.ListVal(outVals).WithMarks(marks), nil
 		}
 	},
 })
@@ -884,9 +916,11 @@ var ReverseListFunc = function.New(&function.Spec{
 // preserving the ordering of all of the input lists. Otherwise the result is a
 // set of tuples.
 var SetProductFunc = function.New(&function.Spec{
-	Params: []function.Parameter{},
+	Description: `Calculates the cartesian product of two or more sets.`,
+	Params:      []function.Parameter{},
 	VarParam: &function.Parameter{
 		Name:        "sets",
+		Description: "The sets to consider. Also accepts lists and tuples, and if all arguments are of list or tuple type then the result will preserve the input ordering",
 		Type:        cty.DynamicPseudoType,
 		AllowMarked: true,
 	},
@@ -935,12 +969,16 @@ var SetProductFunc = function.New(&function.Spec{
 		var retMarks cty.ValueMarks
 
 		total := 1
+		var hasUnknownLength bool
 		for _, arg := range args {
 			arg, marks := arg.Unmark()
 			retMarks = cty.NewValueMarks(retMarks, marks)
 
+			// Continue processing after we find an argument with unknown
+			// length to ensure that we cover all the marks
 			if !arg.Length().IsKnown() {
-				return cty.UnknownVal(retType).Mark(marks), nil
+				hasUnknownLength = true
+				continue
 			}
 
 			// Because of our type checking function, we are guaranteed that
@@ -949,13 +987,17 @@ var SetProductFunc = function.New(&function.Spec{
 			total *= arg.LengthInt()
 		}
 
+		if hasUnknownLength {
+			return cty.UnknownVal(retType).WithMarks(retMarks), nil
+		}
+
 		if total == 0 {
 			// If any of the arguments was an empty collection then our result
 			// is also an empty collection, which we'll short-circuit here.
 			if retType.IsListType() {
-				return cty.ListValEmpty(ety).Mark(retMarks), nil
+				return cty.ListValEmpty(ety).WithMarks(retMarks), nil
 			}
-			return cty.SetValEmpty(ety).Mark(retMarks), nil
+			return cty.SetValEmpty(ety).WithMarks(retMarks), nil
 		}
 
 		subEtys := ety.TupleElementTypes()
@@ -1016,10 +1058,12 @@ var SetProductFunc = function.New(&function.Spec{
 // SliceFunc is a function that extracts some consecutive elements
 // from within a list.
 var SliceFunc = function.New(&function.Spec{
+	Description: `Extracts a subslice of the given list or tuple value.`,
 	Params: []function.Parameter{
 		{
-			Name: "list",
-			Type: cty.DynamicPseudoType,
+			Name:        "list",
+			Type:        cty.DynamicPseudoType,
+			AllowMarked: true,
 		},
 		{
 			Name: "start_index",
@@ -1058,10 +1102,10 @@ var SliceFunc = function.New(&function.Spec{
 		return cty.Tuple(argTy.TupleElementTypes()[startIndex:endIndex]), nil
 	},
 	Impl: func(args []cty.Value, retType cty.Type) (ret cty.Value, err error) {
-		inputList := args[0]
+		inputList, marks := args[0].Unmark()
 
 		if retType == cty.DynamicPseudoType {
-			return cty.DynamicVal, nil
+			return cty.DynamicVal.WithMarks(marks), nil
 		}
 
 		// we ignore idxsKnown return value here because the indices are always
@@ -1073,18 +1117,18 @@ var SliceFunc = function.New(&function.Spec{
 
 		if endIndex-startIndex == 0 {
 			if retType.IsTupleType() {
-				return cty.EmptyTupleVal, nil
+				return cty.EmptyTupleVal.WithMarks(marks), nil
 			}
-			return cty.ListValEmpty(retType.ElementType()), nil
+			return cty.ListValEmpty(retType.ElementType()).WithMarks(marks), nil
 		}
 
 		outputList := inputList.AsValueSlice()[startIndex:endIndex]
 
 		if retType.IsTupleType() {
-			return cty.TupleVal(outputList), nil
+			return cty.TupleVal(outputList).WithMarks(marks), nil
 		}
 
-		return cty.ListVal(outputList), nil
+		return cty.ListVal(outputList).WithMarks(marks), nil
 	},
 })
 
@@ -1092,9 +1136,12 @@ func sliceIndexes(args []cty.Value) (int, int, bool, error) {
 	var startIndex, endIndex, length int
 	var startKnown, endKnown, lengthKnown bool
 
+	// remove marks from args[0]
+	list, _ := args[0].Unmark()
+
 	// If it's a tuple then we always know the length by the type, but collections might be unknown or have unknown length
-	if args[0].Type().IsTupleType() || args[0].Length().IsKnown() {
-		length = args[0].LengthInt()
+	if list.Type().IsTupleType() || list.Length().IsKnown() {
+		length = list.LengthInt()
 		lengthKnown = true
 	}
 
@@ -1133,9 +1180,10 @@ func sliceIndexes(args []cty.Value) (int, int, bool, error) {
 // ValuesFunc is a function that returns a list of the map values,
 // in the order of the sorted keys.
 var ValuesFunc = function.New(&function.Spec{
+	Description: `Returns the values of elements of a given map, or the values of attributes of a given object, in lexicographic order by key or attribute name.`,
 	Params: []function.Parameter{
 		{
-			Name:        "values",
+			Name:        "mapping",
 			Type:        cty.DynamicPseudoType,
 			AllowMarked: true,
 		},
@@ -1200,6 +1248,7 @@ var ValuesFunc = function.New(&function.Spec{
 // ZipmapFunc is a function that constructs a map from a list of keys
 // and a corresponding list of values.
 var ZipmapFunc = function.New(&function.Spec{
+	Description: `Constructs a map from a list of keys and a corresponding list of values, which must both be of the same length.`,
 	Params: []function.Parameter{
 		{
 			Name:        "keys",
