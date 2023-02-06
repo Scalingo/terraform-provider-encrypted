@@ -26,7 +26,7 @@ github.com/Masterminds/goutils
 # github.com/Masterminds/semver/v3 v3.2.0
 ## explicit; go 1.18
 github.com/Masterminds/semver/v3
-# github.com/Masterminds/sprig/v3 v3.2.1
+# github.com/Masterminds/sprig/v3 v3.2.3
 ## explicit; go 1.13
 github.com/Masterminds/sprig/v3
 # github.com/agext/levenshtein v1.2.3
@@ -327,7 +327,7 @@ go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/propagation
 go.opencensus.io/trace/tracestate
-# golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167
+# golang.org/x/crypto v0.3.0
 ## explicit; go 1.17
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
