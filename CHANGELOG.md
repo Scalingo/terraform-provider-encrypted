@@ -2,6 +2,11 @@
 
 ## To be released
 
+## v1.3.4
+
+* deps: Multiple dependabot updates on Go packages
+* chore(go): Use go 1.20
+
 ## v1.3.3
 
 * chore(github): workflow Go version update from 1.14 to 1.17
