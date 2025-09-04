@@ -2,6 +2,10 @@
 
 ## To be released
 
+* deps: Multiple dependabot updates on Go packages
+* chore(go): Use go 1.24
+* chore: fix goreleaser
+
 ## v1.3.4
 
 * deps: Multiple dependabot updates on Go packages
