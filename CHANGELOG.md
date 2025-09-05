@@ -2,6 +2,10 @@
 
 ## To be released
 
+## 1.3.7
+
+* chore: fix go version for release step
+
 ## v1.3.6
 
 * chore: fix release GPG step for goreleaser
