@@ -2,6 +2,10 @@
 
 ## To be released
 
+## v1.3.6
+
+* chore: fix release GPG step for goreleaser
+
 ## v1.3.5
 
 * deps: Multiple dependabot updates on Go packages
