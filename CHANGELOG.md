@@ -2,6 +2,8 @@
 
 ## To be released
 
+* chore(action): Use Scalingo/actions/gpg-key-import action
+
 ## 1.3.7
 
 * chore: fix go version for release step
