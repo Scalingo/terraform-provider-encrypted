@@ -2,6 +2,7 @@
 
 ## To be released
 
+* chore(action): Use Scalingo/actions/gpg-key-import action
 * chore(upgrade): Upgrade to Go 1.26
 
 ## 1.3.7
