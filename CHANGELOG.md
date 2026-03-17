@@ -2,6 +2,8 @@
 
 ## To be released
 
+* chore(upgrade): Upgrade to Go 1.26
+
 ## 1.3.7
 
 * chore: fix go version for release step
