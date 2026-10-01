@@ -2,6 +2,8 @@
 
 ## To be released
 
+## v1.3.9
+
 * deps(go): Upgrade to Go 1.26.8
 * deps(go): Multiple dependabot updates on Go packages
 * build(workflows): Pin checkout, setup-go, and GoReleaser actions to commit hashes
