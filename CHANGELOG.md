@@ -3,6 +3,9 @@
 ## To be released
 
 * deps(go): Upgrade to Go 1.26.8
+* deps(go): Multiple dependabot updates on Go packages
+* build(workflows): Pin checkout, setup-go, and GoReleaser actions to commit hashes
+* fix(asgard): Update ownership to the Infrastructure Engineering team and set tier to 1
 
 ## v1.3.8
 
