@@ -2,6 +2,8 @@
 
 ## To be released
 
+* deps(go): Upgrade to Go 1.26.8
+
 ## v1.3.8
 
 * chore(action): Use Scalingo/actions/gpg-key-import action
